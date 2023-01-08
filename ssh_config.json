@@ -1,0 +1,21 @@
+{
+    "servers": [
+		{
+            "id": "toannguyen",
+            "host": "192.168.64.8",
+            "port": "22",
+            "username": "khanhtoandn99",
+            "password": " "
+        }
+    ],
+
+    "targets": [
+        {
+            "id": "beagleboneblack",
+            "host": "192.168.7.2",
+            "port": "22",
+            "username": "debian",
+            "password": "temppwd"
+        }
+    ]
+}
