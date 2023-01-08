@@ -1,4 +1,4 @@
-import os
+import os, sys
 import shutil
 import json
 
@@ -7,7 +7,7 @@ from paramiko import SSHClient
 from scp import SCPClient
 
 
-SSH_CONFIG_FILE = "ssh_config.json"
+SSH_CONFIG_FILE = "ssh_config.json" # editable
 APP_CONFIG_FILE = ""
 
 SERVER_ADDR  = ""
@@ -15,16 +15,23 @@ SERVER_PORT  = ""
 SERVER_USERNAME = ""
 SERVER_PASSWORD = ""
 
-LOCAL_SOURCE_PATH  = ""
 SERVER_SOURCE_PATH = ""
 SERVER_OUTPUT_PATH = ""
+LOCAL_SOURCE_PATH  = ""
+LOCAL_OUTPUT_PATH  = "/Users/admin/Desktop/repo_TestApp/Release" # editable
+
+APP_FILE = ""
+TEST_FILE = ""
+LIB_FILES = []
 
 TARGET_ADDR = ""
 TARGET_PORT = ""
 TARGET_USERNAME = ""
 TARGET_PASSWORD = ""
 
-TARGET_SOURCE_PATH = ""
+TARGET_APP_FILE_PATH = "/home/debian/TestApp_Prj/opt/bin" # editable
+TARGET_TEST_FILE_PATH = "/home/debian/TestApp_Prj/opt/test" # editable
+TARGET_LIB_FILES_PATH = "/home/debian/TestApp_Prj/opt/lib" # editable
 
 SSH_SERVER_CONNECT_TIMEOUT = 5 #5s
 SSH_SERVER_EXEC_TIMEOUT    = 5 #5s
@@ -103,6 +110,8 @@ def read_app_config():
         LOCAL_SOURCE_PATH = get_config_param(data, 'LOCAL_SOURCE_PATH')
 
         APP_FILE = get_config_param(data, 'APP_FILE')
+        TEST_FILE = get_config_param(data, 'TEST_FILE')
+        LIB_FILES = get_config_param(data, 'LIB_FILES')
         PROCESS_NAME = get_config_param(data, 'PROCESS_NAME')
 
 
@@ -154,7 +163,7 @@ def build():
     print("Building ...\n")
     global g_build_result
     cmd = 'cd ' + SERVER_SOURCE_PATH
-    cmd = cmd + ' && g++ ' + app_name+'.cpp' + ' -o ' + app_name
+    cmd = cmd + ' && arm-linux-gnueabi-g++ ' + app_name+'.cpp' + ' -o ' + APP_FILE
     ssh_stdin, ssh_stdout, ssh_stderr = server_ssh.exec_command(cmd)
     for line in iter(ssh_stderr):
         print(line)
@@ -164,7 +173,7 @@ def build():
 
     g_build_result = True
     cmd = 'mkdir -p ' + SERVER_OUTPUT_PATH
-    cmd = cmd + '&& cp ' + SERVER_SOURCE_PATH + '/' + app_name + ' ' + SERVER_OUTPUT_PATH
+    cmd = cmd + '&& cp ' + SERVER_SOURCE_PATH + '/' + APP_FILE + ' ' + SERVER_OUTPUT_PATH
     server_ssh.exec_command(cmd)
     print("Build success!")
 
@@ -173,8 +182,11 @@ def getBuildOutput():
     if g_build_result == False:
         return
     print("Getting build output to local ...")
+    if os.path.isdir(LOCAL_OUTPUT_PATH + '/'+app_name):
+        shutil.rmtree(LOCAL_OUTPUT_PATH + '/'+app_name)
+    os.mkdir(LOCAL_OUTPUT_PATH + '/'+app_name)
     with SCPClient(server_ssh.get_transport()) as scp:
-        scp.get(SERVER_OUTPUT_PATH+'/'+app_name, LOCAL_SOURCE_PATH)
+        scp.get(SERVER_OUTPUT_PATH+'/'+APP_FILE, LOCAL_OUTPUT_PATH + '/'+app_name)
     print("Done")
 
 
@@ -199,20 +211,16 @@ def connectToTarget():
 def pushToTarget():
     # Clean folder first:
     print("Flashing to Target Device ...")
-    target_ssh.exec_command('rm -R ' + TARGET_SOURCE_PATH)
+    target_ssh.exec_command('rm -R ' + TARGET_APP_FILE_PATH + '/'+APP_FILE)
 
     # Push to Target Device:
-    target_ssh.exec_command('mkdir -p ' + TARGET_SOURCE_PATH)
     with SCPClient(target_ssh.get_transport()) as scp:
-        scp.put(LOCAL_SOURCE_PATH + '\\'+app_name, TARGET_SOURCE_PATH)
+        scp.put(f'' + LOCAL_OUTPUT_PATH + '/'+app_name + '/'+APP_FILE, TARGET_APP_FILE_PATH)
     
     # Set chmod:
     print("Set chmod ...")
-    target_ssh.exec_command('cd ' + TARGET_SOURCE_PATH + ' && chmod 777 ' + app_name)
+    target_ssh.exec_command('cd ' + TARGET_APP_FILE_PATH + ' && chmod 777 ' + APP_FILE)
     print("Done.")
-
-    ssh_stdin, ssh_stdout, ssh_stderr = target_ssh.exec_command('cd ' + TARGET_SOURCE_PATH + ' && ./' + app_name)
-    print(ssh_stdout.readline())
 
 
 def disconnectToTarget():
@@ -220,14 +228,23 @@ def disconnectToTarget():
 
 
 ######### MAIN #########
-read_ssh_config()
-read_app_config()
-connectToServer()
-copySourceToServer()
-build()
-# getBuildOutput()
-disconnectToServer()
+if __name__ == '__main__':
+    need_restore = False
+    os.system("clear")
 
-# connectToTarget()
-# pushToTarget()
-# disconnectToTarget()
+    app = [i for i in sys.argv if not i.startswith("-")]
+    APP_CONFIG_FILE = app[1]
+    
+    read_ssh_config()
+    read_app_config()
+    connectToServer()
+    copySourceToServer()
+    build()
+    getBuildOutput()
+    disconnectToServer()
+
+    need_push = input('Push to board? ')
+    if need_push == 'YES' or need_push == 'y' or need_push == 'yes':
+        connectToTarget()
+        pushToTarget()
+        disconnectToTarget()
