@@ -33,9 +33,13 @@ TARGET_APP_FILE_PATH = "/home/pi/TestApp_Prj/opt/bin" # editable
 TARGET_TEST_FILE_PATH = "/home/pi/TestApp_Prj/opt/test" # editable
 TARGET_LIB_FILES_PATH = "/home/pi/TestApp_Prj/opt/lib" # editable
 
-# TARGET_APP_FILE_PATH  = "/home/khanhtoandn99/TestApp_Simulation/opt/bin" # editable
-# TARGET_TEST_FILE_PATH = "/home/khanhtoandn99/TestApp_Simulation/opt/test" # editable
-# TARGET_LIB_FILES_PATH = "/home/khanhtoandn99/TestApp_Simulation/opt/lib" # editable
+# TARGET_APP_FILE_PATH = "/home/debian/TestApp_Prj/opt/bin" # editable
+# TARGET_TEST_FILE_PATH = "/home/debian/TestApp_Prj/opt/test" # editable
+# TARGET_LIB_FILES_PATH = "/home/debian/TestApp_Prj/opt/lib" # editable
+
+# TARGET_APP_FILE_PATH  = "/home/ubuntu/TestApp_Simulator/opt/bin" # editable
+# TARGET_TEST_FILE_PATH = "/home/ubuntu/TestApp_Simulator/opt/test" # editable
+# TARGET_LIB_FILES_PATH = "/home/ubuntu/TestApp_Simulator/opt/lib" # editable
 
 SSH_SERVER_CONNECT_TIMEOUT = 5 #5s
 SSH_SERVER_EXEC_TIMEOUT    = 5 #5s
@@ -167,7 +171,8 @@ def build():
     print("Building ...\n")
     global g_build_result
     cmd = 'cd ' + SERVER_SOURCE_PATH
-    cmd = cmd + ' && arm-linux-gnueabi-g++ -static ' + app_name+'.cpp' + ' -o ' + APP_FILE
+    cmd = cmd + ' && arm-linux-gnueabihf-g++ -static ' + app_name+'.cpp' + ' -o ' + APP_FILE # For Pi target
+    # cmd = cmd + ' && g++ ' + app_name+'.cpp' + ' -o ' + APP_FILE # For VM target
     ssh_stdin, ssh_stdout, ssh_stderr = server_ssh.exec_command(cmd)
     for line in iter(ssh_stderr):
         print(line)

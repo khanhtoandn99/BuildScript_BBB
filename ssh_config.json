@@ -2,9 +2,9 @@
     "servers": [
 		{
             "id": "toannguyen",
-            "host": "192.168.64.10",
+            "host": "192.168.64.8",
             "port": "22",
-            "username": "khanhtoandn99",
+            "username": "ubuntu",
             "password": " "
         }
     ],
@@ -12,21 +12,21 @@
     "targets": [
         {
             "id": "Raspberry_Pi_3B+",
-            "host": "192.168.100.4",
+            "host": "192.168.100.10",
             "port": "22",
             "username": "root",
             "password": "root"
         },
         {
             "id": "VM_Target",
-            "host": "192.168.64.10",
+            "host": "192.168.64.8",
             "port": "22",
-            "username": "khanhtoandn99",
+            "username": "ubuntu",
             "password": " "
         },
         {
             "id": "beagleboneblack",
-            "host": "192.168.7.2",
+            "host": "192.168.6.2",
             "port": "22",
             "username": "debian",
             "password": "temppwd"
