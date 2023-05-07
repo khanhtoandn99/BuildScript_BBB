@@ -50,6 +50,7 @@ app_name = None
 g_build_result = False
 
 target_ssh = None
+isScpPutCompleted = False
 
 
 # -------------------------------------------------- GET CONFIGURATION -------------------------------------------------#
@@ -142,6 +143,12 @@ def connectToServer():
         server_ssh.connect(hostname=SERVER_ADDR, username=SERVER_USERNAME, password=SERVER_PASSWORD, timeout=SSH_SERVER_CONNECT_TIMEOUT)
     print("Server connected!")
 
+def progress(filename, size, sent):
+    sys.stdout.write("%s's progress: %.2f%%   \r" % (filename, float(sent)/float(size)*100) )
+    global isScpPutCompleted
+    isScpPutCompleted = False
+    if int(sent)/int(size)*100 == 100:
+        isScpPutCompleted = True
 
 def copySourceToServer():
     print("Copying source to server ...")
@@ -152,12 +159,16 @@ def copySourceToServer():
     global app_name
     app_name = getAppName()
     os.chdir(LOCAL_SOURCE_PATH.replace('/'+app_name, ''))
+    if os.path.exists(LOCAL_SOURCE_PATH + '.zip'):
+        print(LOCAL_SOURCE_PATH + '.zip' + " is existed, removing ...")
+        os.remove(LOCAL_SOURCE_PATH + '.zip')
     shutil.make_archive(app_name, 'zip', LOCAL_SOURCE_PATH)
 
     # Push to server:
     server_ssh.exec_command('mkdir ' + SERVER_SOURCE_PATH)
-    with SCPClient(server_ssh.get_transport()) as scp:
+    with SCPClient(server_ssh.get_transport(), progress=progress) as scp:
         scp.put(f''+LOCAL_SOURCE_PATH+'.zip', SERVER_SOURCE_PATH)
+    while isScpPutCompleted == False: {}
 
     # Unzip source
     cmd =           'cd '+ SERVER_SOURCE_PATH # cd to directory
@@ -165,6 +176,7 @@ def copySourceToServer():
     cmd = cmd + ' && rm -R ' + app_name+'.zip' # then delete zip
     ssh_stdin, ssh_stdout, ssh_stderr = server_ssh.exec_command(cmd)
     print(ssh_stdout.readline())
+    print("Completed pushed to server and unziped")
 
 
 def build():
@@ -248,12 +260,12 @@ if __name__ == '__main__':
     read_app_config()
     connectToServer()
     copySourceToServer()
-    build()
-    getBuildOutput()
+    # build()
+    # getBuildOutput()
     disconnectToServer()
 
-    need_push = input('Push to board? ')
-    if need_push == 'YES' or need_push == 'y' or need_push == 'yes':
-        connectToTarget()
-        pushToTarget()
-        disconnectToTarget()
+    # need_push = input('Push to board? ')
+    # if need_push == 'YES' or need_push == 'y' or need_push == 'yes':
+    #     connectToTarget()
+    #     pushToTarget()
+    #     disconnectToTarget()

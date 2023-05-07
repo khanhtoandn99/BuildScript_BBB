@@ -1,6 +1,6 @@
 {
     "SERVER_SOURCE_PATH": "/home/ubuntu/TestApp_Prj/Framework/TestService",
-    "SERVER_OUTPUT_PATH": "/home/ubuntu/TestApp_Prj/Release/Framework/TestService",
+    "SERVER_OUTPUT_PATH": "/home/ubuntu/TestApp_Prj/Release/Framework/bin",
     "LOCAL_SOURCE_PATH": "/Users/admin/Desktop/repo_TestApp/Framework/TestService",
 
     "APP_FILE": "app.framework.testservice",
