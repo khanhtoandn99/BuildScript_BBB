@@ -1,6 +1,6 @@
 {
     "servers": [
-		{
+        {
             "id": "toannguyen",
             "host": "192.168.64.8",
             "port": "22",

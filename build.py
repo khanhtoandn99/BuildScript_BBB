@@ -6,7 +6,7 @@ import paramiko
 from paramiko import SSHClient
 from scp import SCPClient
 
-
+# ========== GET FROM ssh_config.json:
 SSH_CONFIG_FILE = "ssh_config.json" # editable
 APP_CONFIG_FILE = ""
 
@@ -15,34 +15,31 @@ SERVER_PORT  = ""
 SERVER_USERNAME = ""
 SERVER_PASSWORD = ""
 
-SERVER_SOURCE_PATH = ""
-SERVER_OUTPUT_PATH = ""
-LOCAL_SOURCE_PATH  = ""
-LOCAL_OUTPUT_PATH  = "/Users/admin/Desktop/repo_TestApp/Release" # editable
-
-APP_FILE = ""
-TEST_FILE = ""
-LIB_FILES = []
-
 TARGET_ADDR = ""
 TARGET_PORT = ""
 TARGET_USERNAME = ""
 TARGET_PASSWORD = ""
 
-TARGET_APP_FILE_PATH = "/home/pi/TestApp_Prj/opt/bin" # editable
-TARGET_TEST_FILE_PATH = "/home/pi/TestApp_Prj/opt/test" # editable
-TARGET_LIB_FILES_PATH = "/home/pi/TestApp_Prj/opt/lib" # editable
+# ========== GET FROM templateapp.json
+SERVER_SOURCE_PATH = ""
+SERVER_OUTPUT_PATH = ""
+LOCAL_SOURCE_PATH  = ""
+LOCAL_OUTPUT_PATH  = ""
 
-# TARGET_APP_FILE_PATH = "/home/debian/TestApp_Prj/opt/bin" # editable
-# TARGET_TEST_FILE_PATH = "/home/debian/TestApp_Prj/opt/test" # editable
-# TARGET_LIB_FILES_PATH = "/home/debian/TestApp_Prj/opt/lib" # editable
+TARGET_BIN_PATH = ""
+TARGET_LIB_PATH = ""
+TARGET_TEST_PATH = ""
 
-# TARGET_APP_FILE_PATH  = "/home/ubuntu/TestApp_Simulator/opt/bin" # editable
-# TARGET_TEST_FILE_PATH = "/home/ubuntu/TestApp_Simulator/opt/test" # editable
-# TARGET_LIB_FILES_PATH = "/home/ubuntu/TestApp_Simulator/opt/lib" # editable
+APP_FILE = ""
+TEST_FILE = ""
+LIB_FILES = []
 
+# ========== Build config:
 SSH_SERVER_CONNECT_TIMEOUT = 5 #5s
 SSH_SERVER_EXEC_TIMEOUT    = 5 #5s
+
+BUILD_CMD = "make all" # Ex: make all
+
 
 # Variables:
 server_ssh = None
@@ -54,7 +51,7 @@ isScpPutCompleted = False
 
 
 # -------------------------------------------------- GET CONFIGURATION -------------------------------------------------#
-def get_config_param(json_data, key, mandatory=True, default_val=""):
+def getConfigParam(json_data, key, mandatory=True, default_val=""):
     value = json_data.get(key)
 
     if value is None or len(value) == 0: 
@@ -66,7 +63,7 @@ def get_config_param(json_data, key, mandatory=True, default_val=""):
     return value
 
 
-def read_ssh_config():
+def readSSHConfig():
     global SERVER_ADDR, SERVER_PORT, SERVER_USERNAME, SERVER_PASSWORD
     global TARGET_ADDR, TARGET_PORT, TARGET_USERNAME, TARGET_PASSWORD
 
@@ -85,23 +82,24 @@ def read_ssh_config():
         if target_json is None: raise Exception(f'Target config data not found')
 
         print('Reading server info:')
-        SERVER_ADDR = get_config_param(server_json, 'host')
-        SERVER_PORT = get_config_param(server_json, 'port')
-        SERVER_USERNAME = get_config_param(server_json, 'username')
-        SERVER_PASSWORD = get_config_param(server_json, 'password')
+        SERVER_ADDR = getConfigParam(server_json, 'host')
+        SERVER_PORT = getConfigParam(server_json, 'port')
+        SERVER_USERNAME = getConfigParam(server_json, 'username')
+        SERVER_PASSWORD = getConfigParam(server_json, 'password')
         if SERVER_PORT == "": SERVER_PORT = "22"
 
         print('\nReading target info:')
-        TARGET_ADDR = get_config_param(target_json, 'host')
-        TARGET_PORT = get_config_param(target_json, 'port')
-        TARGET_USERNAME = get_config_param(target_json, 'username')
-        TARGET_PASSWORD = get_config_param(target_json, 'password')
+        TARGET_ADDR = getConfigParam(target_json, 'host')
+        TARGET_PORT = getConfigParam(target_json, 'port')
+        TARGET_USERNAME = getConfigParam(target_json, 'username')
+        TARGET_PASSWORD = getConfigParam(target_json, 'password')
         if TARGET_PORT == "": TARGET_PORT = "22"
 
 
-def read_app_config():
+def readAppConfig():
     global SERVER_SOURCE_PATH, SERVER_OUTPUT_PATH
-    global LOCAL_SOURCE_PATH
+    global LOCAL_SOURCE_PATH, LOCAL_OUTPUT_PATH
+    global TARGET_BIN_PATH, TARGET_LIB_PATH, TARGET_TEST_PATH
     global APP_FILE, TEST_FILE, LIB_FILES
     global PROCESS_NAME
 
@@ -114,14 +112,18 @@ def read_app_config():
     with open(APP_CONFIG_FILE, 'r') as f:
         data = json.load(f)
 
-        SERVER_SOURCE_PATH = get_config_param(data, 'SERVER_SOURCE_PATH')
-        SERVER_OUTPUT_PATH = get_config_param(data, 'SERVER_OUTPUT_PATH')
-        LOCAL_SOURCE_PATH = get_config_param(data, 'LOCAL_SOURCE_PATH')
+        SERVER_SOURCE_PATH = getConfigParam(data, 'SERVER_SOURCE_PATH')
+        SERVER_OUTPUT_PATH = getConfigParam(data, 'SERVER_OUTPUT_PATH')
+        LOCAL_SOURCE_PATH = getConfigParam(data, 'LOCAL_SOURCE_PATH')
+        LOCAL_OUTPUT_PATH = getConfigParam(data, 'LOCAL_OUTPUT_PATH')
+        TARGET_BIN_PATH = getConfigParam(data, 'TARGET_BIN_PATH')
+        TARGET_LIB_PATH = getConfigParam(data, 'TARGET_LIB_PATH')
+        TARGET_TEST_PATH = getConfigParam(data, 'TARGET_TEST_PATH')
 
-        APP_FILE = get_config_param(data, 'APP_FILE')
-        TEST_FILE = get_config_param(data, 'TEST_FILE')
-        LIB_FILES = get_config_param(data, 'LIB_FILES')
-        PROCESS_NAME = get_config_param(data, 'PROCESS_NAME')
+        APP_FILE = getConfigParam(data, 'APP_FILE')
+        TEST_FILE = getConfigParam(data, 'TEST_FILE')
+        LIB_FILES = getConfigParam(data, 'LIB_FILES')
+        PROCESS_NAME = getConfigParam(data, 'PROCESS_NAME')
 
 
 # -------------------------------------------------- BUILD SERVER ------------------------------------------------------#
@@ -183,8 +185,7 @@ def build():
     print("Building ...\n")
     global g_build_result
     cmd = 'cd ' + SERVER_SOURCE_PATH
-    cmd = cmd + ' && arm-linux-gnueabihf-g++ -static ' + app_name+'.cpp' + ' -o ' + APP_FILE # For Pi target
-    # cmd = cmd + ' && g++ ' + app_name+'.cpp' + ' -o ' + APP_FILE # For VM target
+    cmd = cmd + ' && ' + BUILD_CMD # For Beagebone/Pi Target
     ssh_stdin, ssh_stdout, ssh_stderr = server_ssh.exec_command(cmd)
     for line in iter(ssh_stderr):
         print(line)
@@ -232,15 +233,15 @@ def connectToTarget():
 def pushToTarget():
     # Clean folder first:
     print("Flashing to Target Device ...")
-    target_ssh.exec_command('rm -R ' + TARGET_APP_FILE_PATH + '/'+APP_FILE)
+    target_ssh.exec_command('rm -R ' + TARGET_BIN_PATH + '/' + APP_FILE)
 
     # Push to Target Device:
     with SCPClient(target_ssh.get_transport()) as scp:
-        scp.put(f'' + LOCAL_OUTPUT_PATH + '/'+app_name + '/'+APP_FILE, TARGET_APP_FILE_PATH)
-    
+        scp.put(f'' + LOCAL_OUTPUT_PATH + '/'+app_name + '/'+ APP_FILE, TARGET_BIN_PATH)
+
     # Set chmod:
     print("Set chmod ...")
-    target_ssh.exec_command('cd ' + TARGET_APP_FILE_PATH + ' && chmod 777 ' + APP_FILE)
+    target_ssh.exec_command('cd ' + TARGET_BIN_PATH + ' && chmod 777 ' + APP_FILE)
     print("Done.")
 
 
@@ -255,17 +256,19 @@ if __name__ == '__main__':
 
     app = [i for i in sys.argv if not i.startswith("-")]
     APP_CONFIG_FILE = app[1]
-    
-    read_ssh_config()
-    read_app_config()
+
+    readSSHConfig()
+    readAppConfig()
     connectToServer()
     copySourceToServer()
-    # build()
-    # getBuildOutput()
+    build()
+    getBuildOutput()
     disconnectToServer()
 
-    # need_push = input('Push to board? ')
-    # if need_push == 'YES' or need_push == 'y' or need_push == 'yes':
-    #     connectToTarget()
-    #     pushToTarget()
-    #     disconnectToTarget()
+    need_push = input('Push to Target [y/n]? ')
+    need_push.lower()
+    if need_push == 'y' or need_push == 'yes':
+        connectToTarget()
+        pushToTarget()
+        disconnectToTarget()
+    print("Job done!")

@@ -1,0 +1,18 @@
+{
+    "SERVER_SOURCE_PATH": "/home/ubuntu/Desktop/Learning/Ethernet/Test1",
+    "SERVER_OUTPUT_PATH": "/home/ubuntu/Desktop/Learning/Ethernet/Test1",
+    "LOCAL_SOURCE_PATH": "/Users/admin/Desktop/LearnEmbedded/Ethernet/Test1",
+    "LOCAL_OUTPUT_PATH": "/Users/admin/Desktop/LearnEmbedded/Ethernet/Test1",
+    "TARGET_BIN_PATH": "/home/debian/Learnings/Ethernet/Test1",
+    "TARGET_LIB_PATH": "/home/debian/Learnings/Ethernet/Test1/lib",
+    "TARGET_TEST_PATH": "/home/debian/Learnings/Ethernet/Test1/test",
+
+    "APP_FILE": "learnembedded.ethernet.test1",
+    "TEST_FILE": "learnembedded.ethernet.test1.test",
+    "LIB_FILES": [
+        "",
+        ""
+    ],
+
+    "PROCESS_NAME": "learnembedded.ethernet.test1"
+}
